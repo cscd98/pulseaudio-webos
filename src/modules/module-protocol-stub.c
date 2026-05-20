@@ -59,6 +59,10 @@
 #  define UNIX_SOCKET "simple"
 #  define MODULE_ARGUMENTS "rate", "format", "channels", "sink", "source", "playback", "record",
 
+#  if defined(USE_TCP_SOCKETS)
+#  else
+#  endif
+
   PA_MODULE_DESCRIPTION("Simple protocol "SOCKET_DESCRIPTION);
   PA_MODULE_USAGE("rate=<sample rate> "
                   "format=<sample format> "
@@ -75,6 +79,12 @@
 #  define UNIX_SOCKET "cli"
 #  define MODULE_ARGUMENTS
 
+#if 0	
+#  ifdef USE_TCP_SOCKETS
+#  else
+#  endif
+#endif
+
   PA_MODULE_DESCRIPTION("Command line interface protocol "SOCKET_DESCRIPTION);
   PA_MODULE_USAGE(SOCKET_USAGE);
 #elif defined(USE_PROTOCOL_HTTP)
@@ -84,6 +94,10 @@
 #  define UNIX_SOCKET "http"
 #  define MODULE_ARGUMENTS
 
+#  ifdef USE_TCP_SOCKETS
+#  else
+#  endif
+
   PA_MODULE_DESCRIPTION("HTTP "SOCKET_DESCRIPTION);
   PA_MODULE_USAGE(SOCKET_USAGE);
 #elif defined(USE_PROTOCOL_NATIVE)
@@ -92,6 +106,10 @@
 #  define IPV4_PORT PA_NATIVE_DEFAULT_PORT
 #  define UNIX_SOCKET PA_NATIVE_DEFAULT_UNIX_SOCKET
 #  define MODULE_ARGUMENTS_COMMON "cookie", "auth-cookie", "auth-cookie-enabled", "auth-anonymous",
+
+#  ifdef USE_TCP_SOCKETS
+#  else
+#  endif
 
 #  if defined(HAVE_CREDS) && !defined(USE_TCP_SOCKETS)
 #    define MODULE_ARGUMENTS MODULE_ARGUMENTS_COMMON "auth-group", "auth-group-enable", "srbchannel",
@@ -120,6 +138,10 @@
 #  define TCPWRAP_SERVICE "esound"
 #  define IPV4_PORT ESD_DEFAULT_PORT
 #  define MODULE_ARGUMENTS_COMMON "sink", "source", "auth-anonymous", "cookie", "auth-cookie", "auth-cookie-enabled",
+
+#  ifdef USE_TCP_SOCKETS
+#  else
+#  endif
 
 #  if defined(USE_TCP_SOCKETS)
 #    define MODULE_ARGUMENTS MODULE_ARGUMENTS_COMMON "auth-ip-acl",

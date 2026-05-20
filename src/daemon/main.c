@@ -283,6 +283,17 @@ static int change_user(void) {
     if (!pa_streq(pw->pw_dir, PA_SYSTEM_RUNTIME_PATH))
         pa_log_warn(_("Home directory of user '%s' is not '%s', ignoring."), PA_SYSTEM_USER, PA_SYSTEM_RUNTIME_PATH);
 
+    pa_log_info("[start]snapshot ready - pulseaudio before set env");
+    bool wait_for_mountreadwrite = true;
+    while(wait_for_mountreadwrite) {
+        if(0 == access("/tmp/mount-readwrite.conf.done", W_OK)) {
+            wait_for_mountreadwrite = false;
+            break;
+        }
+        sleep(0.1);
+    }
+    pa_log_info("[finish]snapshot ready - pulseaudio before set env");
+
     if (pa_make_secure_dir(PA_SYSTEM_RUNTIME_PATH, 0755, pw->pw_uid, gr->gr_gid, true) < 0) {
         pa_log(_("Failed to create '%s': %s"), PA_SYSTEM_RUNTIME_PATH, pa_cstrerror(errno));
         return -1;
@@ -623,7 +634,13 @@ int main(int argc, char *argv[]) {
 
     pa_reset_personality();
     pa_drop_root();
-    pa_close_allv(passed_fds);
+
+    /* pa_close_allv will affect to PulseAudio internal hooking thread
+     * e.g. tLibSystrim
+     * in PulseAudio process.
+     * Please refer to [COMMONDEV-358] and [QEVENTSEVT-5165] */
+    // pa_close_allv(passed_fds);
+
     pa_xfree(passed_fds);
     pa_reset_sigs(-1);
     pa_unblock_sigs(-1);

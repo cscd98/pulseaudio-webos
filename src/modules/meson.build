@@ -2,18 +2,6 @@ if host_machine.system() != 'windows'
   subdir('rtp')
 endif
 
-libpalm_policy_util = shared_library('palm-policy-util',
-  'module-palm-policy-util.c',
-  'module-palm-policy-util.h',
-  c_args : [pa_c_args, server_c_args],
-  link_args : [nodelete_link_args],
-  include_directories : [configinc, topinc],
-  dependencies : [libpulse_dep, libpulsecommon_dep, libpulsecore_dep],
-  install : true,
-  install_rpath : rpath_dirs,
-  install_dir : modlibexecdir,
-)
-
 # module name, sources, [headers, extra flags, extra deps, extra libs]
 all_modules = [
   [ 'module-allow-passthrough', 'module-allow-passthrough.c' ],
@@ -73,7 +61,8 @@ all_modules = [
   [ 'module-virtual-sink', 'module-virtual-sink.c' ],
   [ 'module-virtual-source', 'module-virtual-source.c' ],
   [ 'module-volume-restore', 'module-volume-restore.c' ],
-	[ 'module-palm-policy', 'module-palm-policy.c', [], [], [alsa_dep], libpalm_policy_util ],
+# [ 'module_bsaa2dp_sink', 'module-bsaa2dp-sink.c'],
+	['module-palm-policy', 'module-palm-policy.c'],
 ]
 
 if host_machine.system() == 'windows'
@@ -122,6 +111,14 @@ if alsa_dep.found()
     [ 'module-alsa-sink', 'alsa/module-alsa-sink.c', [], [], [alsa_dep, libm_dep], libalsa_util ],
     [ 'module-alsa-source', 'alsa/module-alsa-source.c', [], [], [alsa_dep, libm_dep], libalsa_util ],
   ]
+endif
+
+if tinyalsa_dep.found()
+ subdir('tinyalsa')
+        all_modules += [
+        ['module_tinyalsa_source', 'tinyalsa/module-tinyalsa-source.c', [], [], [], libtinyalsa_util ],
+        ['module_tinyalsa_sink', 'tinyalsa/module-tinyalsa-sink.c', [], [], [], libtinyalsa_util ],
+ ]
 endif
 
 if avahi_dep.found()
@@ -290,7 +287,6 @@ if webrtc_dep.found()
   module_echo_cancel_libs += [libwebrtc_util]
 endif
 
-
 all_modules += [
   [ 'module-echo-cancel',
     module_echo_cancel_sources + module_echo_cancel_orc_sources,
@@ -298,46 +294,6 @@ all_modules += [
     module_echo_cancel_flags,
     module_echo_cancel_deps,
     module_echo_cancel_libs,
-  ]
-]
-
-
-# Module preprocess is quite modular itself and requires a section of its own
-module_preprocess = [
-  'preprocess-source/module_preprocess-source_c.h',
-  'preprocess-source/module-preprocess-source.c',
-  'preprocess-source/lge_preprocess.cc']
-
-all_modules += [
-  [ 'module-preprocess-source',
-    module_preprocess,
-    [],
-   [],
-    [speex_dep, ltdl_dep, webrtc_agc_dep,json_c_dep],
-   [libpalm_policy_util],
-  ]
-]
-
-module_postprocess_sink = [
-    'postprocess-sink/module-postprocess-sink.c',
-    'postprocess-sink/AudioPostProcess.c',
-    'postprocess-sink/common/biquad.c',
-    'postprocess-sink/module/BassBoost.c',
-    'postprocess-sink/module/Equalizer.c',
-    'postprocess-sink/module/DynamicRangeControl.c',
-    'postprocess-sink/module/drc/mem.c',
-    'postprocess-sink/module/drc/snd.c',
-    'postprocess-sink/module/drc/compressor.c',
-    'postprocess-sink/module/drc/drc_wrap.c',
-  ]
-
-  all_modules += [
-  [ 'module-postprocess-sink',
-    module_postprocess_sink,
-    [],
-    [],
-    [],
-    libpalm_policy_util,
   ]
 ]
 
@@ -364,226 +320,8 @@ foreach m : all_modules
     install_rpath : rpath_dirs,
     install_dir : modlibexecdir,
     dependencies : [thread_dep, libpulse_dep, libpulsecommon_dep, libpulsecore_dep, libintl_dep, platform_dep, platform_socket_dep] + extra_deps,
-    link_args : [nodelete_link_args, '-Wl,-lm,--no-undefined'],
+    link_args : [nodelete_link_args, '-Wl,--no-undefined' ],
     link_with : extra_libs,
     name_prefix : '',
     implicit_include_directories : false)
 endforeach
-
-libagc_src = [
-  'preprocess-source/lge_agc.cc'
-]
-libagc_src_h = [
-  'preprocess-source/lge_agc.h'
-]
-
-mod1 = shared_module('preprocess_gain_control',
-  libagc_src,
-  libagc_src_h,
-  include_directories : [configinc, topinc, include_directories('.')],
-  dependencies : [webrtc_agc_dep,libpulse_dep, libpulsecommon_dep, libpulsecore_dep],
-  link_with : [libpalm_policy_util],
-  install : true,
-  install_dir : join_paths(modlibexecdir, 'audioeffects/preprocess'))
-
-libecnr_src = [
-  'preprocess-source/lge_ecnr.cc'
-]
-libecnr_src_h = [
-  'preprocess-source/lge_ecnr.h'
-]
-
-mod1 = shared_module('preprocess_speech_enhancement',
-  libecnr_src,
-  libecnr_src_h,
-  include_directories : [configinc, topinc, include_directories('.')],
-  dependencies : [libpulse_dep, libpulsecommon_dep, libpulsecore_dep,speex_dep, ltdl_dep],
-  link_with : [],
-  install : true,
-  install_dir : join_paths(modlibexecdir, 'audioeffects/preprocess'))
-
-libbeamforming_src = [
-'preprocess-source/webrtc/base/checks.cc',
-'preprocess-source/lge_beamforming.cc',
-'preprocess-source/webrtc/common_audio/blocker.cc',
-'preprocess-source/webrtc/common_audio/blocker.h',
-'preprocess-source/webrtc/common_audio/audio_converter.cc',
-'preprocess-source/webrtc/common_audio/audio_converter.h',
-'preprocess-source/webrtc/common_audio/fft4g.c',
-'preprocess-source/webrtc/common_audio/fft4g.h',
-'preprocess-source/webrtc/common_audio/audio_ring_buffer.cc',
-'preprocess-source/webrtc/common_audio/audio_ring_buffer.h',
-'preprocess-source/webrtc/common_audio/audio_util.cc',
-'preprocess-source/webrtc/common_audio/channel_buffer.cc',
-'preprocess-source/webrtc/common_audio/channel_buffer.h',
-'preprocess-source/webrtc/common_audio/lapped_transform.cc',
-'preprocess-source/webrtc/common_audio/lapped_transform.h',
-'preprocess-source/webrtc/common_audio/real_fourier_ooura.cc',
-'preprocess-source/webrtc/common_audio/real_fourier_ooura.h',
-'preprocess-source/webrtc/common_audio/real_fourier_openmax.h',
-'preprocess-source/webrtc/common_audio/real_fourier.cc',
-'preprocess-source/webrtc/common_audio/real_fourier.h',
-'preprocess-source/webrtc/common_audio/ring_buffer.c',
-'preprocess-source/webrtc/common_audio/ring_buffer.h',
-'preprocess-source/webrtc/common_audio/sparse_fir_filter.cc',
-'preprocess-source/webrtc/common_audio/sparse_fir_filter.h',
-'preprocess-source/webrtc/common_audio/window_generator.cc',
-'preprocess-source/webrtc/common_audio/window_generator.h',
-'preprocess-source/webrtc/common_audio/include/audio_util.h',
-'preprocess-source/webrtc/common_audio/resampler/push_sinc_resampler.cc',
-'preprocess-source/webrtc/common_audio/resampler/push_sinc_resampler.h',
-'preprocess-source/webrtc/common_audio/resampler/resampler.cc',
-'preprocess-source/webrtc/common_audio/resampler/sinc_resampler.cc',
-'preprocess-source/webrtc/common_audio/resampler/sinc_resampler.h',
-'preprocess-source/webrtc/common_audio/resampler/include/resampler.h',
-'preprocess-source/webrtc/common_audio/signal_processing/copy_set_operations.c',
-'preprocess-source/webrtc/common_audio/signal_processing/cross_correlation.c',
-'preprocess-source/webrtc/common_audio/signal_processing/division_operations.c',
-'preprocess-source/webrtc/common_audio/signal_processing/dot_product_with_scale.c',
-'preprocess-source/webrtc/common_audio/signal_processing/downsample_fast.c',
-'preprocess-source/webrtc/common_audio/signal_processing/energy.c',
-'preprocess-source/webrtc/common_audio/signal_processing/get_scaling_square.c',
-'preprocess-source/webrtc/common_audio/signal_processing/min_max_operations.c',
-'preprocess-source/webrtc/common_audio/signal_processing/randomization_functions.c',
-'preprocess-source/webrtc/common_audio/signal_processing/resample_48khz.c',
-'preprocess-source/webrtc/common_audio/signal_processing/resample_by_2_internal.c',
-'preprocess-source/webrtc/common_audio/signal_processing/resample_by_2_internal.h',
-'preprocess-source/webrtc/common_audio/signal_processing/resample_by_2_mips.c',
-'preprocess-source/webrtc/common_audio/signal_processing/resample_by_2.c',
-'preprocess-source/webrtc/common_audio/signal_processing/resample_fractional.c',
-'preprocess-source/webrtc/common_audio/signal_processing/resample.c',
-'preprocess-source/webrtc/common_audio/signal_processing/spl_init.c',
-'preprocess-source/webrtc/common_audio/signal_processing/spl_sqrt.c',
-'preprocess-source/webrtc/common_audio/signal_processing/splitting_filter.c',
-'preprocess-source/webrtc/common_audio/signal_processing/vector_scaling_operations.c',
-'preprocess-source/webrtc/common_audio/signal_processing/include/signal_processing_library.h',
-'preprocess-source/webrtc/common_audio/signal_processing/include/spl_inl.h',
-'preprocess-source/webrtc/common_audio/vad/vad_core.c',
-'preprocess-source/webrtc/common_audio/vad/vad_core.h',
-'preprocess-source/webrtc/common_audio/vad/vad_filterbank.c',
-'preprocess-source/webrtc/common_audio/vad/vad_filterbank.h',
-'preprocess-source/webrtc/common_audio/vad/vad_gmm.c',
-'preprocess-source/webrtc/common_audio/vad/vad_gmm.h',
-'preprocess-source/webrtc/common_audio/vad/vad_sp.c',
-'preprocess-source/webrtc/common_audio/vad/vad_sp.h',
-'preprocess-source/webrtc/common_audio/vad/webrtc_vad.c',
-'preprocess-source/webrtc/common_audio/vad/include/webrtc_vad.h',
-'preprocess-source/webrtc/modules/audio_coding/codecs/isac/main/source/codec.h',
-'preprocess-source/webrtc/modules/audio_coding/codecs/isac/main/source/filter_functions.c',
-'preprocess-source/webrtc/modules/audio_coding/codecs/isac/main/source/filterbank_tables.c',
-'preprocess-source/webrtc/modules/audio_coding/codecs/isac/main/source/filterbank_tables.h',
-'preprocess-source/webrtc/modules/audio_coding/codecs/isac/main/source/filterbanks.c',
-'preprocess-source/webrtc/modules/audio_coding/codecs/isac/main/source/intialize.c',
-'preprocess-source/webrtc/modules/audio_coding/codecs/isac/main/source/lpc_analysis.c',
-'preprocess-source/webrtc/modules/audio_coding/codecs/isac/main/source/lpc_analysis.h',
-'preprocess-source/webrtc/modules/audio_coding/codecs/isac/main/source/os_specific_inline.h',
-'preprocess-source/webrtc/modules/audio_coding/codecs/isac/main/source/pitch_estimator.c',
-'preprocess-source/webrtc/modules/audio_coding/codecs/isac/main/source/pitch_estimator.h',
-'preprocess-source/webrtc/modules/audio_coding/codecs/isac/main/source/pitch_filter.c',
-'preprocess-source/webrtc/modules/audio_processing/audio_buffer.cc',
-'preprocess-source/webrtc/modules/audio_processing/audio_buffer.h',
-'preprocess-source/webrtc/modules/audio_processing/audio_processing_impl.cc',
-'preprocess-source/webrtc/modules/audio_processing/audio_processing_impl.h',
-'preprocess-source/webrtc/modules/audio_processing/gain_control_impl.cc',
-'preprocess-source/webrtc/modules/audio_processing/gain_control_impl.h',
-'preprocess-source/webrtc/modules/audio_processing/high_pass_filter_impl.cc',
-'preprocess-source/webrtc/modules/audio_processing/high_pass_filter_impl.h',
-'preprocess-source/webrtc/modules/audio_processing/level_estimator_impl.cc',
-'preprocess-source/webrtc/modules/audio_processing/level_estimator_impl.h',
-'preprocess-source/webrtc/modules/audio_processing/three_band_filter_bank.cc',
-'preprocess-source/webrtc/modules/audio_processing/three_band_filter_bank.h',
-'preprocess-source/webrtc/modules/audio_processing/agc/agc_manager_direct.cc',
-'preprocess-source/webrtc/modules/audio_processing/agc/agc_manager_direct.h',
-'preprocess-source/webrtc/modules/audio_processing/processing_component.cc',
-'preprocess-source/webrtc/modules/audio_processing/processing_component.h',
-'preprocess-source/webrtc/modules/audio_processing/rms_level.cc',
-'preprocess-source/webrtc/modules/audio_processing/rms_level.h',
-'preprocess-source/webrtc/modules/audio_processing/splitting_filter.cc',
-'preprocess-source/webrtc/modules/audio_processing/splitting_filter.h',
-'preprocess-source/webrtc/modules/audio_processing/agc/agc.cc',
-'preprocess-source/webrtc/modules/audio_processing/agc/agc.h',
-'preprocess-source/webrtc/modules/audio_processing/agc/histogram.cc',
-'preprocess-source/webrtc/modules/audio_processing/agc/histogram.h',
-'preprocess-source/webrtc/modules/audio_processing/agc/utility.cc',
-'preprocess-source/webrtc/modules/audio_processing/agc/utility.h',
-'preprocess-source/webrtc/modules/audio_processing/agc/legacy/analog_agc.c',
-'preprocess-source/webrtc/modules/audio_processing/agc/legacy/analog_agc.h',
-'preprocess-source/webrtc/modules/audio_processing/agc/legacy/digital_agc.c',
-'preprocess-source/webrtc/modules/audio_processing/agc/legacy/digital_agc.h',
-'preprocess-source/webrtc/modules/audio_processing/agc/legacy/gain_control.h',
-'preprocess-source/webrtc/modules/audio_processing/beamformer/array_util.cc',
-'preprocess-source/webrtc/modules/audio_processing/beamformer/array_util.h',
-'preprocess-source/webrtc/modules/audio_processing/beamformer/beamformer.h',
-'preprocess-source/webrtc/modules/audio_processing/beamformer/complex_matrix.h',
-'preprocess-source/webrtc/modules/audio_processing/beamformer/covariance_matrix_generator.cc',
-'preprocess-source/webrtc/modules/audio_processing/beamformer/covariance_matrix_generator.h',
-'preprocess-source/webrtc/modules/audio_processing/beamformer/doa.cc',
-'preprocess-source/webrtc/modules/audio_processing/beamformer/doa.h',
-'preprocess-source/webrtc/modules/audio_processing/beamformer/matrix.h',
-'preprocess-source/webrtc/modules/audio_processing/beamformer/nonlinear_beamformer.cc',
-'preprocess-source/webrtc/modules/audio_processing/beamformer/nonlinear_beamformer.h',
-'preprocess-source/webrtc/modules/audio_processing/utility/delay_estimator_internal.h',
-'preprocess-source/webrtc/modules/audio_processing/utility/delay_estimator_wrapper.c',
-'preprocess-source/webrtc/modules/audio_processing/utility/delay_estimator_wrapper.h',
-'preprocess-source/webrtc/modules/audio_processing/utility/delay_estimator.c',
-'preprocess-source/webrtc/modules/audio_processing/utility/delay_estimator.h',
-'preprocess-source/webrtc/modules/audio_processing/vad/gmm.cc',
-'preprocess-source/webrtc/modules/audio_processing/vad/gmm.h',
-'preprocess-source/webrtc/modules/audio_processing/vad/pitch_based_vad.cc',
-'preprocess-source/webrtc/modules/audio_processing/vad/pitch_based_vad.h',
-'preprocess-source/webrtc/modules/audio_processing/vad/pitch_internal.cc',
-'preprocess-source/webrtc/modules/audio_processing/vad/pitch_internal.h',
-'preprocess-source/webrtc/modules/audio_processing/vad/pole_zero_filter.cc',
-'preprocess-source/webrtc/modules/audio_processing/vad/pole_zero_filter.h',
-'preprocess-source/webrtc/modules/audio_processing/vad/standalone_vad.cc',
-'preprocess-source/webrtc/modules/audio_processing/vad/standalone_vad.h',
-'preprocess-source/webrtc/modules/audio_processing/vad/vad_audio_proc_internal.h',
-'preprocess-source/webrtc/modules/audio_processing/vad/vad_audio_proc.cc',
-'preprocess-source/webrtc/modules/audio_processing/vad/vad_audio_proc.h',
-'preprocess-source/webrtc/modules/audio_processing/vad/vad_circular_buffer.cc',
-'preprocess-source/webrtc/modules/audio_processing/vad/vad_circular_buffer.h',
-'preprocess-source/webrtc/modules/audio_processing/vad/voice_activity_detector.cc',
-'preprocess-source/webrtc/modules/audio_processing/vad/voice_activity_detector.h',
-'preprocess-source/webrtc/modules/audio_processing/include/audio_processing.h',
-'preprocess-source/webrtc/system_wrappers/include/aligned_malloc.h',
-'preprocess-source/webrtc/system_wrappers/include/critical_section_wrapper.h',
-'preprocess-source/webrtc/system_wrappers/source/aligned_malloc.cc',
-'preprocess-source/webrtc/system_wrappers/source/critical_section_posix.cc',
-'preprocess-source/webrtc/system_wrappers/source/critical_section_posix.h',
-'preprocess-source/webrtc/system_wrappers/source/critical_section.cc',
-]
-
-libbeamforming_src_h = [
-  'preprocess-source/lge_beamforming.h',
-]
-
-mod1 = shared_module('preprocess_beamforming',
-  libbeamforming_src,
-  libbeamforming_src_h,
-  include_directories : [configinc, topinc, include_directories('.')],
-  dependencies : [libpulse_dep, libpulsecommon_dep, libpulsecore_dep],
-  link_with : [],
-  install : true,
-  install_dir : join_paths(modlibexecdir, 'audioeffects/preprocess'))
-
-
-# libmodule_ec_nr_source
-ec_nr = [
-  'preprocess-source/shecnr/kiss_fft.c',
-  'preprocess-source/shecnr/module_ecnr_c.cc',
-  'preprocess-source/shecnr/module_ecnr.cc',
-]
-ec_nr_h = [
-  'preprocess-source/shecnr/_kiss_fft_guts.h',
-  'preprocess-source/shecnr/kiss_fft_log.h',
-  'preprocess-source/shecnr/kiss_fft.h',
-  'preprocess-source/shecnr/module_ecnr_c.h',
-  'preprocess-source/shecnr/module_ecnr.h',
-]
-tflite_dep = dependency('tensorflowlite')
-mod = shared_module('module_ec_nr',
-  ec_nr,
-  ec_nr_h,
-  dependencies : [tflite_dep],
-  install : true,
-  install_dir : join_paths(modlibexecdir, 'audioeffects/preprocess'))

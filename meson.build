@@ -1,7 +1,7 @@
 project('pulseaudio', 'c', 'cpp',
         version : '15.0.0',
         meson_version : '>= 0.50.0',
-        default_options : [ 'c_std=gnu11', 'cpp_std=c++14' ]
+        default_options : [ 'c_std=gnu11', 'cpp_std=c++11' ]
         )
 
 meson.add_dist_script('scripts/save-tarball-version.sh', meson.project_version())
@@ -607,16 +607,39 @@ if alsa_dep.found()
   cdata.set('HAVE_ALSA_UCM', 1)
 endif
 
+#### tinyalsa support ####
+tinyalsa_dep = dependency('tinyalsa', required : get_option('tinyalsa'))
+if tinyalsa_dep.found()
+   cdata.set('HAVE_TINYALSA', 1)
+endif
+#### tinycompress support ####
+tinycompress_dep = dependency('tinycompress', required : get_option('tinycompress'))
+if tinycompress_dep.found()
+   cdata.set('HAVE_TINYCOMPRESS', 1)
+endif
+#### acdbloader support ####
+acdbloader_dep = dependency('acdbloader', required : get_option('acdbloader'))
+if acdbloader_dep.found()
+   cdata.set('HAVE_ACDB', 1)
+endif
+#### ucm support ####
+ucm_dep = dependency('ucm', required : get_option('ucm'))
+if ucm_dep.found()
+   cdata.set('HAVE_UCM', 1)
+endif
 ### palm resampler ####
-
 if get_option('palm-resampler')
    cdata.set('HAVE_PALM_RESAMPLER', 1)
 endif
-
-### raspberrypi ####
-
-if get_option('rpi')
-   cdata.set('HAVE_RPI', 1)
+#### BSA sink ####
+bsa_dep = dependency('bsa', required : get_option('bsa'))
+if bsa_dep.found()
+   cdata.set('HAVE_BSA', 1)
+endif
+#### lge_soundnormalizer support (optional) ####
+lge_soundnormalizer_dep = dependency('lge_soundnormalizer', required : get_option('lge_soundnormalizer'))
+if lge_soundnormalizer_dep.found()
+   cdata.set('HAVE_LGE_SOUNDNORMALIZER', 1)
 endif
 
 asyncns_dep = dependency('libasyncns', version : '>= 0.1', required : get_option('asyncns'))
@@ -776,16 +799,6 @@ if webrtc_dep.found()
   cdata.set('HAVE_WEBRTC', 1)
 endif
 
-webrtc_agc_dep = dependency('webrtc-audio-processing-1', version : '>= 1.0')
-if webrtc_agc_dep.found()
-  cdata.set('HAVE_WEBRTC_AGC', 1)
-endif
-
-json_c_dep = dependency('pbnjson_cpp')
-if json_c_dep.found()
-  cdata.set('HAVE_JSON_C', 1)
-endif
-
 gst_dep = dependency('gstreamer-1.0', version : '>= 1.14', required : get_option('gstreamer'))
 gstapp_dep = dependency('gstreamer-app-1.0', required : get_option('gstreamer'))
 gstrtp_dep = dependency('gstreamer-rtp-1.0', required : get_option('gstreamer'))
@@ -934,6 +947,12 @@ summary = [
   'Enable OSS Wrapper:            @0@'.format(cdata.has('HAVE_OSS_WRAPPER')),
 #  'Enable EsounD:                 @0@'.format(${ENABLE_ESOUND}),
   'Enable Alsa:                   @0@'.format(alsa_dep.found()),
+  'Enable Tinyalsa:               @0@'.format(tinyalsa_dep.found()),
+        'Enable Tinycompress:           @0@'.format(tinycompress_dep.found()),
+        'Enable acdbloader:             @0@'.format(acdbloader_dep.found()),
+        'Enable UCM:                    @0@'.format(ucm_dep.found()),
+        'Enable BSA:                    @0@'.format(bsa_dep.found()),
+        'Enable lge_soundnormalizer:    @0@'.format(lge_soundnormalizer_dep.found()),
 #  'Enable CoreAudio:              @0@'.format(${ENABLE_COREAUDIO}),
 #  'Enable Solaris:                @0@'.format(${ENABLE_SOLARIS}),
 #  'Enable WaveOut:                @0@'.format(${ENABLE_WAVEOUT}),

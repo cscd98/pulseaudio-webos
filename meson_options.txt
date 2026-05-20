@@ -51,6 +51,7 @@ option('padsplibdir',
 # This one gets inserted into a shell double-quoted string, so needs to be escaped (\$LIB). Meson
 # removes a layer of escapes when parsing the description string, so we need to double the
 # backslashes for "meson configure" to display the right text.
+# Tinyalsa , Tinycompress, bsa, ucm, acdbloader, sound normalizer
 option('pulsedsp-location',
        type : 'string',
        description : 'Specify location where OSS wrapper library will be loaded from; can use \\$LIB')
@@ -78,6 +79,24 @@ option('zshcompletiondir',
 option('alsa',
        type : 'feature', value : 'auto',
        description : 'Optional ALSA support')
+option('tinyalsa',
+       type : 'feature', value : 'auto',
+                         description : 'Optional Tinyalsa support')
+option('tinycompress',
+       type : 'feature', value : 'auto',
+                         description : 'Optional Tinycompress support')
+option('acdbloader',
+       type : 'feature', value : 'auto',
+                         description : 'Optional acdbloader support')
+option('ucm',
+       type : 'feature', value : 'auto',
+                         description : 'Optional ucm support')
+option('bsa',
+       type : 'feature', value : 'auto',
+                         description : 'Optional bsa support')
+option('lge_soundnormalizer',
+       type : 'feature', value : 'auto',
+                         description : 'Optional lge_soundnormalizer support')
 option('asyncns',
        type : 'feature', value : 'auto',
        description : 'Optional Async DNS support')
@@ -126,9 +145,6 @@ option('ipv6',
 option('palm-resampler',
        type : 'boolean',
        description : 'Optional palm-resampler support')
-option('rpi',
-       type : 'boolean',
-       description : 'Optional rpi support')
 option('jack',
        type : 'feature', value : 'auto',
        description : 'Optional JACK support')

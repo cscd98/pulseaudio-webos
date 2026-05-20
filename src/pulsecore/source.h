@@ -13,7 +13,7 @@
   or (at your option) any later version.
 
   PulseAudio is distributed in the hope that it will be useful, but
-HAVE_PALM_RESAMPLER  WITHOUT ANY WARRANTY; without even the implied warranty of
+  WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
   General Public License for more details.
 

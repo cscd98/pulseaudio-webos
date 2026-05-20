@@ -189,6 +189,9 @@ enum {
 
     /* Supported since protocol v34 (14.0) */
     PA_COMMAND_SEND_OBJECT_MESSAGE,
+    
+    PA_COMMAND_SET_SINK_VOLUME_RAMP,
+    PA_COMMAND_SET_SINK_INPUT_VOLUME_RAMP,
 
     PA_COMMAND_MAX
 };

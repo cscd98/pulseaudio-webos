@@ -22,7 +22,6 @@
 #endif
 
 #include <string.h>
-#include <math.h>
 
 #include <pulse/xmalloc.h>
 #include <pulsecore/log.h>
@@ -31,7 +30,7 @@
 #include <pulsecore/core-util.h>
 
 #include "resampler.h"
-#include "ffmpeg/avcodec.h"
+
 #include <speex/speex_resampler.h>
 #ifdef HAVE_PALM_RESAMPLER
 #include "palm/palm-filters.h"
@@ -162,7 +161,6 @@ static pa_resample_method_t fix_method(
 #ifdef HAVE_PALM_RESAMPLER
     int index, valida = 0, validb = 0;
 #endif
-
     pa_assert(pa_sample_rate_valid(rate_a));
     pa_assert(pa_sample_rate_valid(rate_b));
     pa_assert(method >= 0);
@@ -317,7 +315,7 @@ static pa_sample_format_t choose_work_format(
     switch (method) {
         /* This block is for resampling functions that only
          * support the S16 sample format. */
-        case PA_RESAMPLER_SPEEX_FIXED_BASE:     /* fall through */
+        case PA_RESAMPLER_SPEEX_FIXED_BASE:
         case PA_RESAMPLER_FFMPEG:
             work_format = PA_SAMPLE_S16NE;
             break;
@@ -718,9 +716,9 @@ static const char * const resample_methods[] = {
 #ifdef HAVE_PALM_RESAMPLER
     "palm",
 #endif
-   "soxr-mq",
-   "soxr-hq",
-   "soxr-vhq"
+    "soxr-mq",
+    "soxr-hq",
+    "soxr-vhq"
 };
 
 const char *pa_resample_method_to_string(pa_resample_method_t m) {
@@ -1549,9 +1547,10 @@ void pa_resampler_run(pa_resampler *r, const pa_memchunk *in, pa_memchunk *out) 
         pa_memchunk_reset(out);
 }
 
+
 #ifdef HAVE_PALM_RESAMPLER
 /*** Palm Sample Rate Conversion implementation ***/
-static unsigned palm_resample(pa_resampler *r, const pa_memchunk *input, unsigned in_n_frames, pa_memchunk *output, unsigned *out_n_frames) {
+static void palm_resample(pa_resampler *r, const pa_memchunk *input, unsigned in_n_frames, pa_memchunk *output, unsigned *out_n_frames) {
 
     pa_assert(r);
     palm_resampler *pr = r->palm.state;
@@ -1599,7 +1598,6 @@ static unsigned palm_resample(pa_resampler *r, const pa_memchunk *input, unsigne
 
     pa_memblock_release(input->memblock);
     pa_memblock_release(output->memblock);
-    return 0;
 }
 
 static void palm_update_rates(pa_resampler *r) {
@@ -1823,7 +1821,7 @@ static int palm_init(pa_resampler *r) {
             set_palm_resampler(pr, 2, 3, 2, 24, poly_fixed_3_1_24, 147, 40, 24, poly_fixed_147_80_24);
             break;
         default:
-            palm_free(r);
+            palm_free(pr);
             pa_log("sample rate not supported!");
             return -1;
             break;
@@ -1845,7 +1843,7 @@ static int palm_init(pa_resampler *r) {
             }
         }
     } else {
-        palm_free(r);
+        palm_free(pr);
         return -1;
     }
 

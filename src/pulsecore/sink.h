@@ -33,6 +33,7 @@
 #include <pulsecore/core.h>
 #include <pulsecore/idxset.h>
 #include <pulsecore/memchunk.h>
+#include <pulsecore/mix.h>
 #include <pulsecore/source.h>
 #include <pulsecore/module.h>
 #include <pulsecore/asyncmsgq.h>
@@ -110,6 +111,9 @@ struct pa_sink {
     /* Saved volume state while we're in passthrough mode */
     pa_cvolume saved_volume;
     bool saved_save_volume:1;
+    
+    /* for volume ramps */
+    pa_cvolume_ramp_int ramp;
 
     pa_asyncmsgq *asyncmsgq;
 
@@ -332,6 +336,8 @@ struct pa_sink {
         uint32_t volume_change_safety_margin;
         /* Usec delay added to all volume change events, may be negative. */
         int32_t volume_change_extra_delay;
+        
+        pa_cvolume_ramp_int ramp;
     } thread_info;
 
     void *userdata;
@@ -365,6 +371,10 @@ typedef enum pa_sink_message {
     PA_SINK_MESSAGE_SET_MAX_REQUEST,
     PA_SINK_MESSAGE_UPDATE_VOLUME_AND_MUTE,
     PA_SINK_MESSAGE_SET_PORT_LATENCY_OFFSET,
+    PA_SINK_MESSAGE_GET_TINYCOMPRESS_TIMESTAMP,
+    PA_SINK_MESSAGE_TINYCOMPRESS_DRAIN,
+    PA_SINK_MESSAGE_TINYCOMPRESS_FLUSH,
+    PA_SINK_MESSAGE_SET_VOLUME_RAMP,
     PA_SINK_MESSAGE_MAX
 } pa_sink_message_t;
 
@@ -490,6 +500,8 @@ void pa_sink_set_mute(pa_sink *sink, bool mute, bool save);
 bool pa_sink_get_mute(pa_sink *sink, bool force_refresh);
 
 bool pa_sink_update_proplist(pa_sink *s, pa_update_mode_t mode, pa_proplist *p);
+
+void pa_sink_set_volume_ramp(pa_sink *s, const pa_cvolume_ramp *ramp, bool send_msg, bool save);
 
 int pa_sink_set_port(pa_sink *s, const char *name, bool save);
 

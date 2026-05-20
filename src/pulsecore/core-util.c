@@ -2775,7 +2775,13 @@ int pa_close_all(int except_fd, ...) {
 
     va_end(ap);
 
-    r = pa_close_allv(p);
+    /* pa_close_allv will affect to PulseAudio internal hooking thread
+     * e.g. tLibSystrim
+     * in PulseAudio process.
+     * Please refer to [COMMONDEV-358] and [QEVENTSEVT-5165] */
+    // r = pa_close_allv(p);
+    r = 0;
+
     pa_xfree(p);
 
     return r;

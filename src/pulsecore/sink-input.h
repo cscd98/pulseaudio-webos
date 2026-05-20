@@ -32,6 +32,7 @@
 #include <pulsecore/client.h>
 #include <pulsecore/sink.h>
 #include <pulsecore/core.h>
+#include <pulsecore/mix.h>
 
 typedef enum pa_sink_input_state {
     PA_SINK_INPUT_INIT,         /*< The stream is not active yet, because pa_sink_input_put() has not been called yet */
@@ -57,7 +58,8 @@ typedef enum pa_sink_input_flags {
     PA_SINK_INPUT_DONT_INHIBIT_AUTO_SUSPEND = 256,
     PA_SINK_INPUT_NO_CREATE_ON_SUSPEND = 512,
     PA_SINK_INPUT_KILL_ON_SUSPEND = 1024,
-    PA_SINK_INPUT_PASSTHROUGH = 2048
+    PA_SINK_INPUT_PASSTHROUGH = 2048,
+    PA_SINK_INPUT_START_RAMP_MUTED = 4096,
 } pa_sink_input_flags_t;
 
 struct pa_sink_input {
@@ -129,6 +131,11 @@ struct pa_sink_input {
      * is moved to other sinks for some reason, it still can be restored to the
      * preferred_sink at an appropriate time */
     char *preferred_sink;
+    
+    /* for volume ramps */
+    pa_cvolume_ramp_int ramp;
+    bool corked;
+    bool corked_internal;
 
     pa_resample_method_t requested_resample_method, actual_resample_method;
 
@@ -258,6 +265,8 @@ struct pa_sink_input {
         pa_usec_t requested_sink_latency;
 
         pa_hashmap *direct_outputs;
+        
+        pa_cvolume_ramp_int ramp;
     } thread_info;
 
     void *userdata;
@@ -274,6 +283,7 @@ enum {
     PA_SINK_INPUT_MESSAGE_SET_STATE,
     PA_SINK_INPUT_MESSAGE_SET_REQUESTED_LATENCY,
     PA_SINK_INPUT_MESSAGE_GET_REQUESTED_LATENCY,
+    PA_SINK_INPUT_MESSAGE_SET_VOLUME_RAMP,
     PA_SINK_INPUT_MESSAGE_MAX
 };
 
@@ -284,6 +294,11 @@ typedef struct pa_sink_input_send_event_hook_data {
 } pa_sink_input_send_event_hook_data;
 
 typedef struct pa_sink_input_new_data {
+    /* The sink input object is not properly initialized, so don't access the
+     * member variables! You can only rely on the state variable being
+     * initialized to PA_SINK_INPUT_INIT. */
+    pa_sink_input *sink_input;
+
     pa_sink_input_flags_t flags;
 
     pa_proplist *proplist;
@@ -382,6 +397,8 @@ int pa_sink_input_remove_volume_factor(pa_sink_input *i, const char *key);
 pa_cvolume *pa_sink_input_get_volume(pa_sink_input *i, pa_cvolume *volume, bool absolute);
 
 void pa_sink_input_set_mute(pa_sink_input *i, bool mute, bool save);
+
+void pa_sink_input_set_volume_ramp(pa_sink_input *i, const pa_cvolume_ramp *volume, bool send_msg, bool save);
 
 void pa_sink_input_set_property(pa_sink_input *i, const char *key, const char *value);
 void pa_sink_input_set_property_arbitrary(pa_sink_input *i, const char *key, const uint8_t *value, size_t nbytes);

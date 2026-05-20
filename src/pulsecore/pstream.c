@@ -193,7 +193,7 @@ struct pa_pstream {
  * REGISTER_MEMFD_SHMID command is sent, with the pool's memfd fd, very early
  * on. This command has an ID that uniquely identifies the pool in question.
  * Further pool's block references can then be exclusively done using such ID;
- * the fd can be safely closed – on both ends – afterwards.
+ * the fd can be safely closed â€“ on both ends â€“ afterwards.
  *
  * On the sending side of this command, we want to close the passed fds
  * directly after being sent. Meanwhile we're only allowed to asynchronously

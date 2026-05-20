@@ -35,7 +35,7 @@ load-module module-esound-protocol-unix
 load-module module-native-protocol-unix auth-anonymous=1
 
 ### Automatically restore the volume of streams and devices
-#load-module module-stream-restore
+load-module module-stream-restore
 load-module module-device-restore
 
 ### Automatically restore the default sink/source when changed by the user
@@ -51,10 +51,10 @@ load-module module-dbus-protocol access=local
 
 ### Automatically move streams to the default sink if the sink they are
 ### connected to dies, similar for sources
-#load-module module-rescue-streams
+load-module module-rescue-streams
 
 ### Make sure we always have a sink around, even if it is a null sink.
-#load-module module-always-sink
+load-module module-always-sink
 
 ### Automatically suspend sinks/sources that become idle for too long
 load-module module-suspend-on-idle
@@ -84,6 +84,8 @@ load-module module-null-sink sink_name=peffects
 load-module module-null-sink sink_name=pvoicerecognition
 load-module module-null-sink sink_name=ptts
 load-module module-null-sink sink_name=pndk
+load-module module-null-sink sink_name=pnetflix
+load-module module-null-sink sink_name=rtp rate=8000 channels=1 format=alaw
 
 load-module module-palm-policy
 

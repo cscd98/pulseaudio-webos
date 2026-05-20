@@ -509,7 +509,7 @@ static int try_recover(struct userdata *u, const char *call, int err) {
 
     pa_log_debug("%s: %s", call, pa_alsa_strerror(err));
 
-    pa_assert(err != -EAGAIN);
+    //pa_assert(err != -EAGAIN);
 
     if (err == -EPIPE)
         pa_log_debug("%s: Buffer underrun!", call);

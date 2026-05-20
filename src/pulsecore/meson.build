@@ -77,6 +77,8 @@ libpulsecore_headers = [
   'device-port.h',
   'ffmpeg/avcodec.h',
   'ffmpeg/dsputil.h',
+	'palm/palm-filters.h',
+	'palm/palm-resampler.h',
   'filter/biquad.h',
   'filter/crossover.h',
   'filter/lfe-filter.h',

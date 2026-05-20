@@ -67,6 +67,12 @@ static uint32_t
     source_output_idx = PA_INVALID_INDEX,
     sink_idx = PA_INVALID_INDEX;
 
+static uint32_t arg_channels = 2;
+static pa_volume_ramp_type_t arg_ramp_type = 0;
+static uint32_t arg_time = 0;
+static pa_volume_t arg_volume = 0x10000U;
+static pa_volume_fade_type_t arg_fade = 1;
+
 static bool short_list_format = false;
 static uint32_t module_index;
 static int32_t latency_offset;
@@ -131,6 +137,7 @@ static enum {
     GET_SOURCE_VOLUME,
     SET_SOURCE_VOLUME,
     SET_SINK_INPUT_VOLUME,
+    SET_SINK_INPUT_VOLUME_RAMP,
     SET_SOURCE_OUTPUT_VOLUME,
     GET_SINK_MUTE,
     SET_SINK_MUTE,
@@ -1664,6 +1671,15 @@ static void context_state_callback(pa_context *c, void *userdata) {
                 case SET_SINK_INPUT_VOLUME:
                     o = pa_context_get_sink_input_info(c, sink_input_idx, get_sink_input_volume_callback, NULL);
                     break;
+                
+                case SET_SINK_INPUT_VOLUME_RAMP:
+                    if (arg_ramp_type > 2)
+                        arg_ramp_type = 2;
+                    pa_cvolume_ramp ramp;
+                    pa_cvolume_ramp_init(&ramp);
+                    pa_cvolume_ramp_set(&ramp, arg_channels, arg_ramp_type, arg_time, arg_volume, arg_fade ? PA_VOLUME_FADE_IN : PA_VOLUME_FADE_OUT);
+                    //pa_operation_unref(pa_context_set_sink_input_volume_ramp(c, sink_input_idx, &ramp, simple_callback, NULL));
+                    break;
 
                 case SET_SOURCE_OUTPUT_VOLUME:
                     o = pa_context_get_source_output_info(c, source_output_idx, get_source_output_volume_callback, NULL);
@@ -2240,6 +2256,33 @@ int main(int argc, char *argv[]) {
 
             if (parse_volumes(argv+optind+2, argc-(optind+2)) < 0)
                 goto quit;
+
+        } else if (pa_streq(argv[optind], "set-sink-input-volume-ramp")) {
+            action = SET_SINK_INPUT_VOLUME_RAMP;
+            if (argc != optind+6) {
+                pa_log(_("You have to specify a sink input index , channels, ramp type, duration and fade type"));
+                goto quit;
+            }
+            if (pa_atou(argv[optind+1], &sink_input_idx) < 0) {
+                pa_log(_("Invalid sink input index"));
+                goto quit;
+            }
+            if ((pa_atou(argv[optind+2], &arg_channels) < 0) || arg_channels == 0) {
+                pa_log(_("Invalid channels"));
+                goto quit;
+            }
+            if (pa_atou(argv[optind+3], &arg_ramp_type) < 0) {
+                pa_log(_("Invalid ramp type"));
+                goto quit;
+            }
+            if ((pa_atou(argv[optind+4], &arg_time) < 0) || arg_time == 0 || arg_time > 3000) {
+                pa_log(_("Invalid ramp duration"));
+                goto quit;
+            }
+            if (pa_atou(argv[optind+5], &arg_fade) < 0 || arg_fade > 1) {
+                pa_log(_("Invalid fade type"));
+                goto quit;
+            }
 
         } else if (pa_streq(argv[optind], "set-source-output-volume")) {
             action = SET_SOURCE_OUTPUT_VOLUME;

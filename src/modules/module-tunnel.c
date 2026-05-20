@@ -62,6 +62,10 @@
 #include <pulsecore/x11prop.h>
 #endif
 
+#ifdef TUNNEL_SINK
+#else
+#endif
+
 #define ENV_DEFAULT_SINK "PULSE_SINK"
 #define ENV_DEFAULT_SOURCE "PULSE_SOURCE"
 #define ENV_DEFAULT_SERVER "PULSE_SERVER"
