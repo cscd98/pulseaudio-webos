@@ -18,6 +18,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <errno.h>
+#include <ctype.h>
 
 #include <pulse/xmalloc.h>
 #include <pulsecore/thread.h>
@@ -740,7 +741,7 @@ static void load_unicast_rtp_module(struct userdata *u)
             args = pa_sprintf_malloc("source=%s destination_ip=%s port=%d","rtp.monitor",
                 u->destAddress, u->connectionPort);
         }
-        u->rtp_module = pa_module_load(&u->rtp_module, u->core, "module-rtp-send", args);
+        pa_module_load(&u->rtp_module, u->core, "module-rtp-send", args);
     }
 
     if (args)
@@ -775,7 +776,7 @@ static void load_alsa_source(struct userdata *u, int status)
         else
             return;
 
-        u->alsa_source = pa_module_load(&u->alsa_source, u->core, "module-alsa-source", args);
+        pa_module_load(&u->alsa_source, u->core, "module-alsa-source", args);
 
         if (!u->alsa_source)
             pa_log("Error loading in module-alsa-source");
@@ -812,7 +813,7 @@ static void load_alsa_sink(struct userdata *u, int status)
         args = pa_sprintf_malloc("device=hw:%d,%d mmap=0 sink_name=%s fragment_size=4096 tsched=0",\
                 u->external_soundcard_number, u->external_device_number, u->deviceName);
         /*Loading alsa sink with sink_name*/
-        u->default_alsa_sink = pa_module_load(&u->default_alsa_sink, u->core, "module-alsa-sink", args);
+        pa_module_load(&u->default_alsa_sink, u->core, "module-alsa-sink", args);
         if (NULL == u->default_alsa_sink)
             pa_log("Error loading in module-alsa-sink with sink_name%s", u->deviceName);
         else
@@ -916,7 +917,7 @@ static void load_multicast_rtp_module(struct userdata *u)
                     u->destAddress, u->connectionPort);
             }
         }
-        u->rtp_module = pa_module_load(&u->rtp_module, u->core, "module-rtp-send", args);
+        pa_module_load(&u->rtp_module, u->core, "module-rtp-send", args);
     }
 
     if (args)
